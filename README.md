@@ -95,22 +95,49 @@ HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnce
 
 <img width="983" height="303" alt="image" src="https://github.com/user-attachments/assets/e3b17614-a960-4465-885a-cbe3a18cf3af" />
 
-
 All we need is to check which keynames attacker modified to execute the ps1 script.
 
 11. Run Live Forensicator again using the flag to get browser history. Look at the BROWSING_HISTORY directory first, focusing on history from the compromised account used by the attacker. Three websites are a concern for data exfiltration, what are the URLs? (Alphabetical order based on subdomain or domain)
 
-Check the folder and in the file we see:
+Check the folder and in the file of ServiceAccount we see:
+
+<img width="826" height="485" alt="image" src="https://github.com/user-attachments/assets/4d9459a3-4f31-41ea-b63e-7a4792faa456" />
+
+Answer is gds.google, pastebin and wetransfer.
 
 12. Look at Live Forensicator's BrowserHistory.html output and search through the results for Pastebin. What is the URL that contains exfiltrated company data?
 
 Running Forensicator with flag -BROWSER BROWSER and looking at the report:
 
+<img width="929" height="150" alt="image" src="https://github.com/user-attachments/assets/e81266dd-05bc-45d7-98ad-732a31d315df" />
+
+
 13. Visit this page directly (or if it is removed, use web.archive.org). How many rows of data have been exfiltrated by the attacker? 
 
-After opening the pastebin:
+After opening the pastebin (https://web.archive.org/web/20240511093651/https://pastebin.com/MbnNWkMT):
 
+<img width="1468" height="734" alt="image" src="https://github.com/user-attachments/assets/5e50b33e-dda5-4f43-9114-cf5b975a125d" />
 
 14. Revisiting the malicious script created by the attacker, according to Live Forensicator, what is the creation date for the .ps1 file?
 
+I ran through the evtx file log to see if there was a timestamp of creation for this file but there wasn't one, so I went to browser reports since questions hinted at that and one the first entries (by time) is the answer:
 
+<img width="845" height="497" alt="image" src="https://github.com/user-attachments/assets/3ba39d85-3c0c-434a-b4a9-749fa6b784bd" />
+
+15. What is the Last logon value for the attacker manually accessing the compromised account? (Remember, certain persistence mechanisms might log in as the user, so think about the timestamp that makes sense within the timeline)
+
+Here the easiest is to go to event viewer again and filter for 4624 events and then correlate these with the script creation and ServiceAccount:
+
+<img width="623" height="411" alt="image" src="https://github.com/user-attachments/assets/24695c7a-680f-4958-90c6-657af6939034" />
+
+After that only SYSTEM logons are present so we found the answer.
+
+17. Based on the information in the data dump, investigate the files of each user on the system to locate the document. What is the filename, and which account was it stored on?
+
+The question is vague and doesn't give me any hint on what type of file we are searching for or in which folders so I used GPT to write a ps script and enumerate user's files for standard document extensions: '''$ext=@('.txt','.pdf','.md','.xlsx','.xls','.docx','.doc'); Get-ChildItem "$env:SystemDrive\Users" -Directory -ErrorAction SilentlyContinue | ForEach-Object { $u=$_.Name; Get-ChildItem $_.FullName -Recurse -File -ErrorAction SilentlyContinue | Where-Object { $ext -contains $_.Extension.ToLower() } | Select-Object @{n='UserName';e={$u}}, Name, FullName }'''.
+
+The question asks "which accoutn was it stored on" - originally, so we glance at the users and spot:
+
+<img width="963" height="91" alt="image" src="https://github.com/user-attachments/assets/22ea2a68-3144-4e40-87bf-33376e0560fb" />
+
+This room showcased a really useful tool, I'll try to bookmark and remember it, because although its a little old in design it produces very useful and fast to analyze reports and doesn't take eternity to run. Overall, I would say this lab was fun and provided another opportunity to brush up on windows forensics which is always good!
