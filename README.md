@@ -7,6 +7,7 @@ Lab description:
 Readings to get familiar with tools:
 
 https://github.com/Johnng007/Live-Forensicator
+
 https://github.com/WithSecureLabs/chainsaw
 
 We are given a windows machine with tools already in place:
@@ -81,11 +82,35 @@ Looked for hidden files and found nothing:
 
 <img width="674" height="171" alt="image" src="https://github.com/user-attachments/assets/9e25f655-c181-4b0f-9694-5c26d03ca03c" />
 
-I even searched the whole C drive and looked if it was still running in memory as a ps process, but no luck. 
+I even searched the whole C drive and looked if it was still running in memory as a ps process, but no luck. (Edit - when I started the instance again, all the files in temp including the script loaded correctly ).
 
 In the end I had to search for an answer in a writeup and turns out they found the file at the location!
 
 Answer: "cmd.exe -c nc64.exe -lvp 4456 e c:\Windows\System32\cmd.exe"
 
 10. We can't always trust the output from our tools. Manually investigate the machine's Run, RunOnce, RunServiceOnce registry keys. List the keynames where the persistence script is being executed.
+
+We start the RegEditor and find the keys at location: HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Run
+HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\RunOnce
+
+<img width="983" height="303" alt="image" src="https://github.com/user-attachments/assets/e3b17614-a960-4465-885a-cbe3a18cf3af" />
+
+
+All we need is to check which keynames attacker modified to execute the ps1 script.
+
+11. Run Live Forensicator again using the flag to get browser history. Look at the BROWSING_HISTORY directory first, focusing on history from the compromised account used by the attacker. Three websites are a concern for data exfiltration, what are the URLs? (Alphabetical order based on subdomain or domain)
+
+Check the folder and in the file we see:
+
+12. Look at Live Forensicator's BrowserHistory.html output and search through the results for Pastebin. What is the URL that contains exfiltrated company data?
+
+Running Forensicator with flag -BROWSER BROWSER and looking at the report:
+
+13. Visit this page directly (or if it is removed, use web.archive.org). How many rows of data have been exfiltrated by the attacker? 
+
+After opening the pastebin:
+
+
+14. Revisiting the malicious script created by the attacker, according to Live Forensicator, what is the creation date for the .ps1 file?
+
 
